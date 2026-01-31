@@ -79,96 +79,20 @@ Requirements
 
 # Browser Tab Manager
 
-A small command-line browser tab manager implemented in Python. It implements a circular doubly-linked list of tabs and supports grouping, LRU-based automatic closing when exceeding a maximum number of tabs, session snapshots/restores, duplicate-pruning, and simple tab navigation.
+Simple CLI tab manager (Python). Uses a circular doubly‑linked list of tabs with optional groups, LRU auto‑close, in‑memory snapshots, and duplicate pruning.
 
-This README describes how to run and use the manager, the available commands, design notes, limitations, and suggestions for improvement.
-
-## Features
-
-- Open and close tabs (with optional groups)
-- Circular navigation (next / previous)
-- Switch directly to a tab by ID
-- LRU enforcement: automatically close least-recently-used tab when exceeding max tabs
-- Snapshot and restore session state
-- Prune duplicate URLs, keeping the most recently active one
-- Simple status listing including tab groups
-
-## Requirements
-
+Requirements
 - Python 3.7+
 
-No third-party packages required.
+Quick start
+- Run: `python BrowserTabManager.py`
+- Interactive prompt: enter commands below.
 
-## Running
-
-Run the manager from the repo root:
-
-```bash
-python BrowserTabManager.py
-```
-
-You will see a prompt (`>`) to enter commands.
-
-## Commands
-
-- OPEN <url> [group]  
-  Open a new tab for the given URL. Optionally specify a group name.
-  Example: `OPEN https://example.com work`
-
-- CLOSE  
-  Close the currently active tab.
-
-- NEXT  
-  Move to the next tab (circular).
-
-- PREV  
-  Move to the previous tab (circular).
-
-- SWITCH <tab_id>  
-  Switch directly to the tab with the given tab id (e.g., `T1`, `T2`).
-
-- SNAPSHOT  
-  Save a deep-copied snapshot of the current session (tabs, groups, current position).
-
-- RESTORE  
-  Restore the last saved snapshot.
-
-- PRUNE  
-  Remove duplicate tabs that share the same URL, keeping the most recently active tab.
-
-- STATUS  
-  Print all open tabs and groups. The active tab is marked with `*`.
-
-- (CTRL+C or CTRL+D)  
-  Exit the program.
-
-## Example session
-
-```
-> OPEN https://example.com
-Tab T1 opened: https://example.com
-> OPEN https://example.org work
-Tab T2 opened: https://example.org (Group: work)
-> OPEN https://example.com
-Tab T3 opened: https://example.com
-> STATUS
-Tabs:
-  T1 | https://example.com | Group: None
-  * T3 | https://example.com | Group: None
-  T2 | https://example.org | Group: work
-Groups: {'work': ['T2']}
-> PRUNE
-Removed duplicate tab T1
-Remaining: 2 tabs.
-> SNAPSHOT
-Session saved (2 tabs).
-> CLOSE
-T3 closed.
-> RESTORE
-Session restored (2 tabs).
-> STATUS
-Tabs:
-* T3 | https://example.com | Group: None
-  T2 | https://example.org | Group: work
-Groups: {'work': ['T2']}
-```
+Commands (brief)
+- OPEN <url> [group] — open a new tab
+- CLOSE — close current tab
+- NEXT / PREV — navigate circularly
+- SWITCH <tab_id> — go to a tab (e.g., T1)
+- SNAPSHOT / RESTORE — save/restore session (in memory)
+- PRUNE — remove duplicate URLs (keep most recently active)
+- STATUS — list tabs (active marked with *)
