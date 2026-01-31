@@ -7,7 +7,7 @@ This repository contains three small problems/features contributed by team membe
 Ownership
 - Editor (this part: `editor.py`, `tk_editor.py`, `test_run.py`) — implemented by: lisa-lilu
 - Problem 41 — GPS Retracer (`gps_retracer.py`) — implemented by: essete7
-- Problem 32 — Session-aware Browser Tab Manager (Java) — jose-19
+- Problem 32 — Session-aware Browser Tab Manager — jose-19
 
 ---
 
@@ -77,68 +77,22 @@ Requirements
 
 ---
 
-## Session-aware Browser Tab Manager — Problem 32 (jose-19)
+# Browser Tab Manager
 
-Session-aware Browser Tab Manager is a command-line Java program that manages browser tabs with features such as circular tab navigation, tab grouping, session snapshots for crash recovery, duplicate pruning, and LRU-based tab eviction. It demonstrates classic data structures and session management in Java.
+Simple CLI tab manager (Python). Uses a circular doubly‑linked list of tabs with optional groups, LRU auto‑close, in‑memory snapshots, and duplicate pruning.
 
-Summary / Key Features
-- Circular tab navigation (next/previous wraps around).
-- Tab grouping for organizing related tabs.
-- Session snapshots (stack) to save/restore sessions (crash recovery).
-- Duplicate pruning (remove older duplicate URLs, keep most recent).
-- LRU-based tab eviction (evict least recently used tabs when limits are reached).
-- Command-line interface for interacting with the manager.
+Requirements
+- Python 3.7+
 
-How to run
-- Run from IntelliJ:
-  - Open the project in IntelliJ IDEA
-  - Run `Main.java` (entry point)
+Quick start
+- Run: `python BrowserTabManager.py`
+- Interactive prompt: enter commands below.
 
-- Run from terminal (after compiling):
-  ```bash
-  javac -d out src/manager/*.java
-  java -cp out manager.Main
-  ```
-
-Commands (CLI)
-- `OPEN <url> [group]`   : Open a new tab (optional group)
-- `CLOSE`                : Close current tab
-- `NEXT`                 : Switch to next tab (circular)
-- `PREV`                 : Switch to previous tab
-- `SWITCH <tab_id>`      : Jump to a specific tab by id
-- `SNAPSHOT`             : Save current session state
-- `RESTORE`              : Restore last saved session
-- `PRUNE`                : Remove duplicate URLs (keep most recent)
-- `STATUS`               : Show all tabs and active tab
-
-Data Structures Used
-- Circular Doubly Linked List: tab navigation and ordering
-- Stack: session snapshots (LIFO for save/restore)
-- HashMap / ArrayList: tab lookup, grouping, and LRU tracking
-- (Optional) Priority/linked structure for efficient LRU maintenance
-
-Project Structure
-- `src/manager/Main.java`               : CLI entry point
-- `src/manager/BrowserManager.java`    : Core logic and operations
-- `src/manager/Tab.java`               : Tab data structure
-- `src/manager/SessionSnapshot.java`   : Session state container
-- `out/`                               : (recommended) compiled classes
-
-Example usage
-- Open tabs and view status:
-  ```
-  > OPEN https://example.com
-  > OPEN https://example.org work
-  > STATUS
-  Tab 1: https://example.com (active)
-  Tab 2: https://example.org [group: work]
-  ```
-- Snapshot and restore:
-  ```
-  > SNAPSHOT
-  Session saved
-  > CLOSE
-  > RESTORE
-  Session restored, Tab 2 active
-  ```
-
+Commands (brief)
+- OPEN <url> [group] — open a new tab
+- CLOSE — close current tab
+- NEXT / PREV — navigate circularly
+- SWITCH <tab_id> — go to a tab (e.g., T1)
+- SNAPSHOT / RESTORE — save/restore session (in memory)
+- PRUNE — remove duplicate URLs (keep most recently active)
+- STATUS — list tabs (active marked with *)
