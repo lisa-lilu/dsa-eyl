@@ -7,7 +7,7 @@ This repository contains three small problems/features contributed by team membe
 Ownership
 - Editor (this part: `editor.py`, `tk_editor.py`, `test_run.py`) — implemented by: lisa-lilu
 - Problem 41 — GPS Retracer (`gps_retracer.py`) — implemented by: essete7
-- Problem 32 — Session-aware Browser Tab Manager (Java) — jose-19
+- Problem 32 — Session-aware Browser Tab Manager — jose-19
 
 ---
 
@@ -77,68 +77,98 @@ Requirements
 
 ---
 
-## Session-aware Browser Tab Manager — Problem 32 (jose-19)
+# Browser Tab Manager
 
-Session-aware Browser Tab Manager is a command-line Java program that manages browser tabs with features such as circular tab navigation, tab grouping, session snapshots for crash recovery, duplicate pruning, and LRU-based tab eviction. It demonstrates classic data structures and session management in Java.
+A small command-line browser tab manager implemented in Python. It implements a circular doubly-linked list of tabs and supports grouping, LRU-based automatic closing when exceeding a maximum number of tabs, session snapshots/restores, duplicate-pruning, and simple tab navigation.
 
-Summary / Key Features
-- Circular tab navigation (next/previous wraps around).
-- Tab grouping for organizing related tabs.
-- Session snapshots (stack) to save/restore sessions (crash recovery).
-- Duplicate pruning (remove older duplicate URLs, keep most recent).
-- LRU-based tab eviction (evict least recently used tabs when limits are reached).
-- Command-line interface for interacting with the manager.
+This README describes how to run and use the manager, the available commands, design notes, limitations, and suggestions for improvement.
 
-How to run
-- Run from IntelliJ:
-  - Open the project in IntelliJ IDEA
-  - Run `Main.java` (entry point)
+## Features
 
-- Run from terminal (after compiling):
-  ```bash
-  javac -d out src/manager/*.java
-  java -cp out manager.Main
-  ```
+- Open and close tabs (with optional groups)
+- Circular navigation (next / previous)
+- Switch directly to a tab by ID
+- LRU enforcement: automatically close least-recently-used tab when exceeding max tabs
+- Snapshot and restore session state
+- Prune duplicate URLs, keeping the most recently active one
+- Simple status listing including tab groups
 
-Commands (CLI)
-- `OPEN <url> [group]`   : Open a new tab (optional group)
-- `CLOSE`                : Close current tab
-- `NEXT`                 : Switch to next tab (circular)
-- `PREV`                 : Switch to previous tab
-- `SWITCH <tab_id>`      : Jump to a specific tab by id
-- `SNAPSHOT`             : Save current session state
-- `RESTORE`              : Restore last saved session
-- `PRUNE`                : Remove duplicate URLs (keep most recent)
-- `STATUS`               : Show all tabs and active tab
+## Requirements
 
-Data Structures Used
-- Circular Doubly Linked List: tab navigation and ordering
-- Stack: session snapshots (LIFO for save/restore)
-- HashMap / ArrayList: tab lookup, grouping, and LRU tracking
-- (Optional) Priority/linked structure for efficient LRU maintenance
+- Python 3.7+
 
-Project Structure
-- `src/manager/Main.java`               : CLI entry point
-- `src/manager/BrowserManager.java`    : Core logic and operations
-- `src/manager/Tab.java`               : Tab data structure
-- `src/manager/SessionSnapshot.java`   : Session state container
-- `out/`                               : (recommended) compiled classes
+No third-party packages required.
 
-Example usage
-- Open tabs and view status:
-  ```
-  > OPEN https://example.com
-  > OPEN https://example.org work
-  > STATUS
-  Tab 1: https://example.com (active)
-  Tab 2: https://example.org [group: work]
-  ```
-- Snapshot and restore:
-  ```
-  > SNAPSHOT
-  Session saved
-  > CLOSE
-  > RESTORE
-  Session restored, Tab 2 active
-  ```
+## Running
 
+Run the manager from the repo root:
+
+```bash
+python BrowserTabManager.py
+```
+
+You will see a prompt (`>`) to enter commands.
+
+## Commands
+
+- OPEN <url> [group]  
+  Open a new tab for the given URL. Optionally specify a group name.
+  Example: `OPEN https://example.com work`
+
+- CLOSE  
+  Close the currently active tab.
+
+- NEXT  
+  Move to the next tab (circular).
+
+- PREV  
+  Move to the previous tab (circular).
+
+- SWITCH <tab_id>  
+  Switch directly to the tab with the given tab id (e.g., `T1`, `T2`).
+
+- SNAPSHOT  
+  Save a deep-copied snapshot of the current session (tabs, groups, current position).
+
+- RESTORE  
+  Restore the last saved snapshot.
+
+- PRUNE  
+  Remove duplicate tabs that share the same URL, keeping the most recently active tab.
+
+- STATUS  
+  Print all open tabs and groups. The active tab is marked with `*`.
+
+- (CTRL+C or CTRL+D)  
+  Exit the program.
+
+## Example session
+
+```
+> OPEN https://example.com
+Tab T1 opened: https://example.com
+> OPEN https://example.org work
+Tab T2 opened: https://example.org (Group: work)
+> OPEN https://example.com
+Tab T3 opened: https://example.com
+> STATUS
+Tabs:
+  T1 | https://example.com | Group: None
+  * T3 | https://example.com | Group: None
+  T2 | https://example.org | Group: work
+Groups: {'work': ['T2']}
+> PRUNE
+Removed duplicate tab T1
+Remaining: 2 tabs.
+> SNAPSHOT
+Session saved (2 tabs).
+> CLOSE
+T3 closed.
+> RESTORE
+Session restored (2 tabs).
+> STATUS
+Tabs:
+* T3 | https://example.com | Group: None
+  T2 | https://example.org | Group: work
+Groups: {'work': ['T2']}
+```
