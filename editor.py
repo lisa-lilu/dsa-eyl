@@ -1,86 +1,133 @@
-#!/usr/bin/env python3
-import sys
+import time
+from dataclasses import dataclass
+from typing import List, Optional
+
+class Node:
+    __slots__ = ("c", "p", "n")
+    def __init__(self, ch: str):
+        self.c = ch; self.p = None; self.n = None
+
+@dataclass
+class Action:
+    typ: str
+    nodes: List[Node]
+    anchor: Optional[Node]
+    ts: float
 
 class Editor:
-    def __init__(self):
-        self.left, self.right = [], []    # left (in order), right (stack: top is next char)
-        self.undo, self.redo = [], []
+    def __init__(self, batch_timeout: float = 2.0):
+        self.head = Node("")
+        self.cursor_prev: Node = self.head
+        self.undo_stack: List[Action] = []
+        self.redo_stack: List[Action] = []
+        self._batch: Optional[Action] = None
+        self._last = 0.0
+        self.timeout = batch_timeout
 
-    def write(self, ch):
+    def _ins_after(self, prev: Node, node: Node):
+        nxt = prev.n
+        node.p, node.n = prev, nxt
+        prev.n = node
+        if nxt: nxt.p = node
+
+    def _unlink(self, node: Node):
+        p, n = node.p, node.n
+        if p: p.n = n
+        if n: n.p = p
+        node.p = node.n = None
+
+    def _commit(self):
+        if not self._batch: return
+        if self._batch.typ == "del":
+            self._batch.anchor = self.cursor_prev
+        if self._batch.nodes:
+            self.undo_stack.append(self._batch)
+            self.redo_stack.clear()
+        self._batch = None
+
+    def _extend_ok(self, typ: str, ins_anchor: Optional[Node]) -> bool:
+        return (self._batch is not None and
+                self._batch.typ == typ and
+                time.time() - self._last <= self.timeout and
+                (typ != "ins" or self._batch.anchor is ins_anchor))
+
+    def write(self, ch: str):
         if not ch: return
-        self.left.append(ch); self.redo.clear()
-        self.undo.append(("ins", ch))
+        prev = self.cursor_prev
+        n = Node(ch)
+        self._ins_after(prev, n)
+        self.cursor_prev = n
+        now = time.time()
+        if self._extend_ok("ins", prev):
+            self._batch.nodes.append(n)
+        else:
+            self._commit()
+            self._batch = Action("ins", [n], prev, now)
+        self._last = now
 
     def delete(self):
-        if not self.left: return
-        ch = self.left.pop(); self.redo.clear()
-        self.undo.append(("del", ch))
+        if self.cursor_prev is self.head: return
+        node = self.cursor_prev
+        if self._batch and self._batch.typ == "del" and time.time() - self._last <= self.timeout:
+            self._batch.nodes.insert(0, node)
+        else:
+            self._commit()
+            self._batch = Action("del", [node], None, time.time())
+        self._unlink(node)
+        self.cursor_prev = node.p if node.p is not None else self.head
+        self._last = time.time()
 
     def move_left(self):
-        if self.left: self.right.append(self.left.pop())
+        self._commit()
+        if self.cursor_prev is not self.head:
+            self.cursor_prev = self.cursor_prev.p if self.cursor_prev.p is not None else self.head
 
     def move_right(self):
-        if self.right: self.left.append(self.right.pop())
+        self._commit()
+        nxt = self.cursor_prev.n
+        if nxt: self.cursor_prev = nxt
 
-    def undo_op(self):
-        if not self.undo: return
-        t, data = self.undo.pop()
-        if t == "ins":
-            for _ in data: 
-                if self.left: self.left.pop()
-        else:  # del
-            for ch in data: self.left.append(ch)
-        self.redo.append((t, data))
-
-    def redo_op(self):
-        if not self.redo: return
-        t, data = self.redo.pop()
-        if t == "ins":
-            for ch in data: self.left.append(ch)
+    def undo(self):
+        self._commit()
+        if not self.undo_stack: return
+        act = self.undo_stack.pop()
+        if act.typ == "ins":
+            for n in reversed(act.nodes):
+                self._unlink(n)
+            self.cursor_prev = act.anchor if act.anchor is not None else self.head
         else:
-            for _ in data:
-                if self.left: self.left.pop()
-        self.undo.append((t, data))
+            cur = act.anchor if act.anchor is not None else self.head
+            for n in act.nodes:
+                self._ins_after(cur, n)
+                cur = n
+            self.cursor_prev = cur
+        self.redo_stack.append(act)
 
-    def display(self):
-        return "".join(self.left) + "|" + "".join(reversed(self.right))
-
-    def process(self, line):
-        if not line: return
-        cmd, *rest = line.strip().split(maxsplit=1)
-        arg = rest[0] if rest else ""
-        c = arg.strip()
-        if cmd.upper() == "WRITE":
-            if (c.startswith("'") and c.endswith("'")) or (c.startswith('"') and c.endswith('"')):
-                c = c[1:-1]
-            if c: self.write(c[0])
-        elif cmd.upper() == "DELETE":
-            self.delete()
-        elif cmd.upper() == "MOVE":
-            d = arg.lower().strip()
-            self.move_left() if d=="left" else self.move_right()
-        elif cmd.upper() == "UNDO":
-            self.undo_op()
-        elif cmd.upper() == "REDO":
-            self.redo_op()
-        elif cmd.upper() == "DISPLAY":
-            print(self.display())
-        elif cmd.upper() in ("EXIT","QUIT"):
-            sys.exit(0)
+    def redo(self):
+        self._commit()
+        if not self.redo_stack: return
+        act = self.redo_stack.pop()
+        if act.typ == "ins":
+            cur = act.anchor if act.anchor is not None else self.head
+            for n in act.nodes:
+                self._ins_after(cur, n)
+                cur = n
+            self.cursor_prev = cur
         else:
-            print("Unknown command")
+            for n in act.nodes:
+                self._unlink(n)
+            self.cursor_prev = act.anchor if act.anchor is not None else self.head
+        self.undo_stack.append(act)
 
-def repl():
-    e = Editor()
-    print("Commands: WRITE <char>, DELETE, MOVE <left|right>, UNDO, REDO, DISPLAY, EXIT")
-    try:
-        while True:
-            s = input("> ").strip()
-            if not s: continue
-            for part in s.split(";"):
-                e.process(part.strip())
-    except (EOFError, KeyboardInterrupt):
-        print("\nBye")
-
-if __name__ == "__main__":
-    repl()
+    def display(self) -> str:
+        out = []
+        cur = self.head.n
+        insert_at = self.cursor_prev.n if self.cursor_prev else None
+        while cur:
+            if cur is insert_at:
+                out.append("|")
+            out.append(cur.c)
+            cur = cur.n
+        if insert_at is None:
+            out.append("|")
+        return "".join(out)

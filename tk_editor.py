@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# Simple Tkinter GUI wrapper for the Editor class (requires editor.py in same folder)
-
 import tkinter as tk
 from editor import Editor
 
@@ -32,7 +29,6 @@ class EditorGUI(tk.Tk):
     def do_write(self):
         ch = self.char_entry.get()
         if ch:
-            # only use first character (consistent with process)
             self.ed.write(ch[0])
             self.char_entry.delete(0, "end")
             self.update_display()
