@@ -3,10 +3,13 @@ class GPSRetracer:
         # Stack to store logged actions
         self.stack = []
 
+    
     def log(self, action: str):
         """Push an action onto the stack."""
         self.stack.append(action)
 
+
+    
     def invert_action(self, action: str) -> str:
         """Invert a single action according to the rules."""
         parts = action.split()
@@ -21,6 +24,8 @@ class GPSRetracer:
         else:
             raise ValueError(f"Unknown action: {action}")
 
+
+    
     def calculate_return(self):
         """Read stack in reverse, invert actions, and print return path."""
         step = 1
@@ -33,6 +38,7 @@ class GPSRetracer:
             step += 1
 
 
+
 # -------------------------
 # Sample CLI-style usage
 # -------------------------
@@ -43,5 +49,6 @@ if __name__ == "__main__":
     gps.log("LEFT")
     gps.log("FWD 50")
 
+    
     print("\nCALCULATE_RETURN")
     gps.calculate_return()
