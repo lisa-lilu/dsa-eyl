@@ -3,15 +3,12 @@ class GPSRetracer:
         # Stack to store logged actions
         self.stack = []
 
-    
-    def log(self, action: str):
-        """Push an action onto the stack."""
+    def log(self, action):
+        # Save the action in the stack
         self.stack.append(action)
 
-
-    
-    def invert_action(self, action: str) -> str:
-        """Invert a single action according to the rules."""
+    def invert_action(self, action):
+        # Change the action to its opposite
         parts = action.split()
 
         if parts[0] == "LEFT":
@@ -19,36 +16,44 @@ class GPSRetracer:
         elif parts[0] == "RIGHT":
             return "LEFT"
         elif parts[0] == "FWD":
-            # Forward distance remains the same
             return action
         else:
-            raise ValueError(f"Unknown action: {action}")
+            raise ValueError("Unknown action")
 
-
-    
     def calculate_return(self):
-        """Read stack in reverse, invert actions, and print return path."""
+        # Print the return path
         step = 1
-        temp_stack = self.stack.copy()  # preserve original log
+        temp_stack = self.stack.copy()
 
         while temp_stack:
-            action = temp_stack.pop()  # LIFO
+            action = temp_stack.pop()
             inverted = self.invert_action(action)
             print(f"{step}. {inverted}")
             step += 1
 
 
-
 # -------------------------
-# Sample CLI-style usage
+# CLI Input Section
 # -------------------------
 if __name__ == "__main__":
     gps = GPSRetracer()
 
-    gps.log("FWD 100")
-    gps.log("LEFT")
-    gps.log("FWD 50")
+    print("Enter commands (type EXIT to stop):")
 
-    
-    print("\nCALCULATE_RETURN")
-    gps.calculate_return()
+    while True:
+        command = input("> ").strip()
+
+        if command == "EXIT":
+            break
+
+        elif command.startswith("LOG"):
+            # Example: LOG FWD 100
+            action = command.replace("LOG ", "")
+            gps.log(action)
+
+        elif command == "CALCULATE_RETURN":
+            print("\nCALCULATE_RETURN")
+            gps.calculate_return()
+
+        else:
+            print("Invalid command")
